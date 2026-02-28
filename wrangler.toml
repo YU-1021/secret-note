@@ -1,14 +1,22 @@
 name = "secret-note"
 main = "worker.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-01-01"
 
 [vars]
-# 在 Cloudflare Dashboard 中设置环境变量 PASSWORD
+# 方式一：在 wrangler.toml 中设置密码（仅用于 CLI 部署）
+# PASSWORD = "your-secure-password-here"
+
+# 方式二：在 Cloudflare Dashboard 中设置密码（推荐，适用于所有部署方式）
 # Settings -> Variables and Secrets -> Add variable
 # Name: PASSWORD, Value: your-secure-password-here
 
+# ===== KV 命名空间配置 =====
+# 如果使用 wrangler CLI 部署，需要填写 KV namespace ID
+# 如果使用 Cloudflare Dashboard 部署，可以注释掉这部分配置
+
 [[kv_namespaces]]
 binding = "NOTES"
-# 在 Cloudflare Dashboard 中绑定 KV 命名空间
-# Settings -> Variables -> KV Namespace Bindings -> Add binding
-# Variable name: NOTES, KV Namespace: 选择你的 KV 命名空间
+id = "your-kv-namespace-id-here"
+# 获取 KV namespace ID 的命令：
+# wrangler kv:namespace create "NOTES"
+# 将返回的 id 填入上面的 id 字段

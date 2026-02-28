@@ -1,0 +1,16 @@
+name = "secret-note"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# ===== Dashboard 部署专用配置 =====
+# 此配置文件用于 Cloudflare Dashboard 部署
+# KV namespace 和密码将在 Dashboard 界面中绑定
+
+[vars]
+# 密码在 Dashboard 中设置：
+# Settings -> Variables and Secrets -> Add variable
+# Name: PASSWORD, Value: your-secure-password-here
+
+# KV namespace 在 Dashboard 中绑定：
+# Settings -> Variables -> KV Namespace Bindings -> Add binding
+# Variable name: NOTES, KV Namespace: 选择你的 KV 命名空间

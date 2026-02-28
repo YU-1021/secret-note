@@ -12,6 +12,8 @@
 
 ### 方式一：通过 Cloudflare Dashboard 直接部署（推荐）
 
+**注意**：Dashboard 部署不需要修改任何配置文件，所有配置都在 Dashboard 界面中完成。
+
 #### 1. 创建 KV 命名空间
 
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
@@ -112,8 +114,25 @@ npm run deploy
 ## 文件说明
 
 - `worker.js` - Cloudflare Worker 主文件，包含 API 和前端代码
-- `wrangler.toml` - Cloudflare Workers 配置文件
+- `wrangler.toml` - CLI 部署配置文件（需要填写 KV namespace ID）
+- `wrangler-dashboard.toml` - Dashboard 部署配置文件（无需填写 ID，用于参考）
 - `package.json` - 项目依赖配置
+
+## 配置文件说明
+
+项目提供两个配置文件，根据你的部署方式选择：
+
+### wrangler.toml（CLI 部署）
+- 用于 `wrangler deploy` 命令部署
+- 需要填写 KV namespace 的 `id` 字段
+- 可以在 `[vars]` 部分设置密码
+
+### wrangler-dashboard.toml（Dashboard 部署）
+- 仅供参考，展示 Dashboard 部署时的配置
+- 无需填写 KV namespace ID（在 Dashboard 界面绑定）
+- 密码在 Dashboard 界面设置
+
+**重要**：Dashboard 部署时，KV namespace 和密码都在 Dashboard 界面中配置，不需要修改配置文件。
 
 ## 安全建议
 
