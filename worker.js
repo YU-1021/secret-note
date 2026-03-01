@@ -1,25 +1,35 @@
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname;
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
 
-    if (path === '/api/auth') {
-      return handleAuth(request, env);
+      if (path === '/api/auth') {
+        return await handleAuth(request, env);
+      }
+
+      if (path === '/api/notes') {
+        return await handleNotes(request, env);
+      }
+
+      if (path === '/' || path === '/index.html') {
+        return handleStatic('index.html');
+      }
+
+      if (path === '/app.js') {
+        return handleStatic('app.js');
+      }
+
+      return new Response('Not Found', { status: 404 });
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        error: 'Internal Server Error', 
+        message: error.message 
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
-
-    if (path === '/api/notes') {
-      return handleNotes(request, env);
-    }
-
-    if (path === '/' || path === '/index.html') {
-      return handleStatic(request, env, 'index.html');
-    }
-
-    if (path === '/app.js') {
-      return handleStatic(request, env, 'app.js');
-    }
-
-    return new Response('Not Found', { status: 404 });
   }
 };
 
@@ -28,19 +38,39 @@ async function handleAuth(request, env) {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { password } = await request.json();
-
-  if (password === env.PASSWORD) {
-    const token = generateToken();
-    return new Response(JSON.stringify({ success: true, token }), {
+  if (!env.PASSWORD) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Server configuration error: PASSWORD not set' 
+    }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  return new Response(JSON.stringify({ success: false, message: 'Invalid password' }), {
-    status: 401,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  try {
+    const { password } = await request.json();
+
+    if (password === env.PASSWORD) {
+      const token = generateToken();
+      return new Response(JSON.stringify({ success: true, token }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify({ success: false, message: 'Invalid password' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Invalid request body' 
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleNotes(request, env) {
@@ -52,30 +82,45 @@ async function handleNotes(request, env) {
     });
   }
 
-  if (request.method === 'GET') {
-    const notes = await env.NOTES.get('notes');
-    return new Response(JSON.stringify({ success: true, notes: notes || '' }), {
+  if (!env.NOTES) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Server configuration error: KV namespace not bound' 
+    }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  if (request.method === 'POST') {
-    const { notes } = await request.json();
-    await env.NOTES.put('notes', notes);
-    return new Response(JSON.stringify({ success: true }), {
+  try {
+    if (request.method === 'GET') {
+      const notes = await env.NOTES.get('notes');
+      return new Response(JSON.stringify({ success: true, notes: notes || '' }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (request.method === 'POST') {
+      const { notes } = await request.json();
+      await env.NOTES.put('notes', notes || '');
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response('Method not allowed', { status: 405 });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Failed to access storage' 
+    }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  return new Response('Method not allowed', { status: 405 });
 }
 
-async function handleStatic(request, env, filename) {
-  const asset = await env.ASSETS.fetch(request);
-  if (asset) {
-    return asset;
-  }
-
+function handleStatic(filename) {
   if (filename === 'index.html') {
     return new Response(INDEX_HTML, {
       headers: { 'Content-Type': 'text/html;charset=UTF-8' }
