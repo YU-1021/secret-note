@@ -10,7 +10,67 @@
 
 ## 部署步骤
 
-### 方式一：通过 Cloudflare Dashboard 直接部署（推荐）
+### 方式一：GitHub 同步部署（推荐）
+
+**适用场景**：通过 Cloudflare Pages 连接 GitHub 仓库自动部署
+
+#### 1. 创建 KV 命名空间
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 "Workers & Pages" -> "KV"
+3. 点击 "Create a Namespace"
+4. 命名为 `secret-notes`
+5. 点击创建后，点击该 namespace 查看 **ID**（一串字符，如 `abc123def456...`）
+6. **复制这个 ID**
+
+#### 2. 配置 wrangler.toml
+
+打开 [wrangler.toml](file:///d:/project/secret%20note/wrangler.toml) 文件，将第 24 行的 `YOUR_KV_NAMESPACE_ID_HERE` 替换为你复制的 KV namespace ID：
+
+```toml
+[[kv_namespaces]]
+binding = "NOTES"
+id = "你的KV_NAMESPACE_ID"  # 粘贴到这里
+```
+
+#### 3. 推送到 GitHub
+
+将项目推送到你的 GitHub 仓库。
+
+#### 4. 连接 Cloudflare Pages
+
+1. 进入 "Workers & Pages" -> "Overview"
+2. 点击 "Create application" -> "Pages" -> "Connect to Git"
+3. 选择你的 GitHub 仓库
+4. 配置构建设置：
+   - **Framework preset**: None
+   - **Build command**: 留空
+   - **Build output directory**: `/`
+5. 点击 "Save and Deploy"
+
+#### 5. 设置环境变量
+
+1. 在 Pages 项目页面点击 "Settings" -> "Environment variables"
+2. 点击 "Add variable"
+3. 填写：
+   - **Variable name**: `PASSWORD`
+   - **Value**: 你的访问密码
+   - 选择环境：Production 和 Preview（都勾选）
+4. 点击 "Save"
+
+#### 6. 重新部署
+
+1. 回到项目页面
+2. 点击 "Deployments" 标签
+3. 点击 "Retry deployment" 或推送新的 commit 触发重新部署
+
+#### 7. 完成
+
+现在你可以访问你的 Pages URL，输入密码开始使用加密笔记了！
+
+---
+
+### 方式二：通过 Cloudflare Dashboard 直接部署
 
 **注意**：Dashboard 部署不需要修改任何配置文件，所有配置都在 Dashboard 界面中完成。
 
@@ -59,7 +119,7 @@
 
 ---
 
-### 方式二：通过 Wrangler CLI 部署
+### 方式三：通过 Wrangler CLI 部署
 
 #### 1. 安装 Wrangler CLI
 
@@ -114,25 +174,20 @@ npm run deploy
 ## 文件说明
 
 - `worker.js` - Cloudflare Worker 主文件，包含 API 和前端代码
-- `wrangler.toml` - CLI 部署配置文件（需要填写 KV namespace ID）
-- `wrangler-dashboard.toml` - Dashboard 部署配置文件（无需填写 ID，用于参考）
+- `wrangler.toml` - 主配置文件（GitHub 同步部署和 CLI 部署都需要填写 KV namespace ID）
 - `package.json` - 项目依赖配置
 
 ## 配置文件说明
 
-项目提供两个配置文件，根据你的部署方式选择：
+### wrangler.toml
 
-### wrangler.toml（CLI 部署）
-- 用于 `wrangler deploy` 命令部署
-- 需要填写 KV namespace 的 `id` 字段
-- 可以在 `[vars]` 部分设置密码
+这是主配置文件，用于 GitHub 同步部署和 CLI 部署：
 
-### wrangler-dashboard.toml（Dashboard 部署）
-- 仅供参考，展示 Dashboard 部署时的配置
-- 无需填写 KV namespace ID（在 Dashboard 界面绑定）
-- 密码在 Dashboard 界面设置
+- **GitHub 同步部署**：必须填写真实的 KV namespace ID
+- **CLI 部署**：必须填写真实的 KV namespace ID
+- **Dashboard 直接部署**：不需要此配置文件
 
-**重要**：Dashboard 部署时，KV namespace 和密码都在 Dashboard 界面中配置，不需要修改配置文件。
+**重要**：KV namespace ID 必须是真实的 ID，不能是占位符！
 
 ## 安全建议
 
@@ -149,19 +204,31 @@ npm run deploy
 
 ## 故障排除
 
+### GitHub 同步部署失败：KV namespace ID 错误
+
+**错误信息**：`"kv_namespaces[0]" bindings should have a string "id" field`
+
+**解决方案**：
+1. 确保 [wrangler.toml](file:///d:/project/secret%20note/wrangler.toml) 中的 `id` 字段填写了真实的 KV namespace ID
+2. 不能使用占位符 `YOUR_KV_NAMESPACE_ID_HERE`
+3. 在 Cloudflare Dashboard -> KV -> 点击你的 namespace -> 复制 ID
+4. 将 ID 粘贴到 wrangler.toml 的 `id` 字段
+5. 推送更改到 GitHub，触发重新部署
+
 ### KV 命名空间未绑定
 
 **Dashboard 部署方式**：
 - 确保在 Settings -> Variables -> KV Namespace Bindings 中正确绑定了 KV 命名空间
 - Variable name 必须是 `NOTES`
 
-**CLI 部署方式**：
-- 确保 `wrangler.toml` 中的 KV 命名空间 ID 正确配置
+**GitHub 同步 / CLI 部署方式**：
+- 确保 `wrangler.toml` 中的 KV 命名空间 ID 是真实有效的 ID
+- ID 应该是一串字符，如 `abc123def456...`
 
 ### 密码验证失败
 
 - 检查环境变量 `PASSWORD` 是否正确设置
-- 确保在 Settings -> Variables and Secrets 中添加了环境变量
+- 确保在 Settings -> Environment variables 中添加了环境变量
 - 变量名必须是 `PASSWORD`（大写）
 
 ### 部署失败
@@ -169,6 +236,7 @@ npm run deploy
 - 确保已登录 Cloudflare 账户
 - 检查是否有足够的权限
 - 确认账户有可用的 Workers 配额
+- 查看 Cloudflare Pages 的构建日志
 
 ### 无法保存笔记
 
