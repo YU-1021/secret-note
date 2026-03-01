@@ -2,27 +2,19 @@ name = "secret-note"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
-# ===== 重要：KV Namespace 绑定 =====
-# 必须填写真实的 KV namespace ID，否则每次部署都会重置绑定
+# ===== Dashboard 绑定说明 =====
+# KV namespace 和密码都在 Cloudflare Dashboard 中绑定，无需修改此文件
 # 
-# 获取 KV namespace ID：
-# 1. 访问 https://dash.cloudflare.com/
-# 2. Workers & Pages -> KV
-# 3. 点击你的 namespace，复制 ID（如：284b840f70de434fae9732f74ee2290e）
+# 绑定 KV namespace：
+# 1. Workers & Pages -> 你的项目 -> Settings -> Functions
+# 2. 找到 "KV namespace bindings" 部分
+# 3. 点击 "Add binding"
+# 4. Variable name: NOTES
+# 5. KV namespace: 选择你创建的 KV namespace
 # 
-# 将下面的 id 替换为你的真实 KV namespace ID
+# 设置密码：
+# 1. Settings -> Environment variables
+# 2. Add variable -> Name: PASSWORD, Value: 你的密码
 
-[[kv_namespaces]]
-binding = "NOTES"
-id = "YOUR_KV_NAMESPACE_ID_HERE"
-
-# ===== 密码设置 =====
-# 方式一：在下方直接设置密码（不推荐，会暴露在代码中）
-# [vars]
-# PASSWORD = "your-password-here"
-
-# 方式二：在 Cloudflare Dashboard 设置（推荐）
-# Settings -> Environment variables -> Add variable
-# Name: PASSWORD, Value: 你的密码
-# 
-# 注意：使用 Dashboard 设置的变量不会被部署覆盖
+# 注意：不要在此文件中添加 [[kv_namespaces]] 配置
+# KV 绑定完全在 Dashboard 界面中完成

@@ -266,14 +266,10 @@ const INDEX_HTML = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>加密笔记</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
             min-height: 100vh;
         }
@@ -302,32 +298,12 @@ const INDEX_HTML = `<!DOCTYPE html>
             text-align: center;
         }
         
-        .login-header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+        .login-header h1 { font-size: 28px; margin-bottom: 10px; }
+        .login-header p { opacity: 0.9; font-size: 14px; }
+        .login-content { padding: 30px; }
         
-        .login-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-        
-        .login-content {
-            padding: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; color: #333; font-size: 14px; margin-bottom: 8px; }
         .form-group input {
             width: 100%;
             padding: 12px 16px;
@@ -336,11 +312,7 @@ const INDEX_HTML = `<!DOCTYPE html>
             font-size: 16px;
             transition: border-color 0.3s;
         }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+        .form-group input:focus { outline: none; border-color: #667eea; }
         
         .btn {
             padding: 12px 24px;
@@ -350,34 +322,20 @@ const INDEX_HTML = `<!DOCTYPE html>
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
         
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             width: 100%;
-            justify-content: center;
         }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        .app-container {
-            display: none;
-            height: 100vh;
-        }
-        
-        .app-container.active {
-            display: flex;
-        }
+        .app-container { display: none; height: 100vh; }
+        .app-container.active { display: flex; }
         
         .sidebar {
-            width: 280px;
+            width: 300px;
             background: #fff;
             border-right: 1px solid #e0e0e0;
             display: flex;
@@ -391,35 +349,21 @@ const INDEX_HTML = `<!DOCTYPE html>
             justify-content: space-between;
             align-items: center;
         }
+        .sidebar-header h2 { font-size: 18px; color: #333; }
         
-        .sidebar-header h2 {
-            font-size: 18px;
-            color: #333;
-        }
-        
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 10px; }
         
         .note-item {
             padding: 15px;
             border-radius: 8px;
             cursor: pointer;
             margin-bottom: 8px;
-            transition: background 0.2s;
+            transition: all 0.2s;
             position: relative;
+            border: 2px solid transparent;
         }
-        
-        .note-item:hover {
-            background: #f5f5f5;
-        }
-        
-        .note-item.active {
-            background: #667eea;
-            color: white;
-        }
+        .note-item:hover { background: #f5f5f5; }
+        .note-item.active { background: #667eea; color: white; }
         
         .note-item .note-title {
             font-weight: 600;
@@ -428,12 +372,9 @@ const INDEX_HTML = `<!DOCTYPE html>
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            padding-right: 30px;
         }
-        
-        .note-item .note-date {
-            font-size: 12px;
-            opacity: 0.7;
-        }
+        .note-item .note-date { font-size: 12px; opacity: 0.7; }
         
         .note-item .delete-btn {
             position: absolute;
@@ -444,58 +385,41 @@ const INDEX_HTML = `<!DOCTYPE html>
             color: white;
             border: none;
             border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 4px 8px;
+            font-size: 11px;
             cursor: pointer;
             opacity: 0;
             transition: opacity 0.2s;
         }
+        .note-item:hover .delete-btn { opacity: 1; }
+        .note-item.active .delete-btn { background: rgba(255,255,255,0.3); }
         
-        .note-item:hover .delete-btn {
-            opacity: 1;
-        }
-        
-        .note-item.active .delete-btn {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        .sidebar-footer {
-            padding: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
+        .sidebar-footer { padding: 15px; border-top: 1px solid #e0e0e0; }
         
         .btn-new {
             background: #667eea;
             color: white;
             width: 100%;
-            justify-content: center;
         }
+        .btn-new:hover { background: #5a6fd6; }
         
         .btn-logout {
             background: transparent;
             color: #666;
             width: 100%;
-            justify-content: center;
             margin-top: 10px;
+            border: 1px solid #e0e0e0;
         }
+        .btn-logout:hover { background: #f5f5f5; }
         
-        .btn-logout:hover {
-            background: #f5f5f5;
-        }
-        
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #fff;
-        }
+        .main-content { flex: 1; display: flex; flex-direction: column; background: #fff; }
         
         .main-header {
             padding: 20px 30px;
             border-bottom: 1px solid #e0e0e0;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 15px;
         }
         
         .main-header input {
@@ -506,16 +430,26 @@ const INDEX_HTML = `<!DOCTYPE html>
             flex: 1;
             padding: 5px 0;
         }
+        .main-header input::placeholder { color: #ccc; }
         
-        .main-header input::placeholder {
-            color: #ccc;
+        .btn-save {
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        .btn-save:hover { background: #229954; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .unsaved-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
         }
         
-        .editor-container {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
+        .editor-container { flex: 1; padding: 30px; overflow-y: auto; }
         
         .editor {
             width: 100%;
@@ -527,10 +461,7 @@ const INDEX_HTML = `<!DOCTYPE html>
             resize: none;
             font-family: inherit;
         }
-        
-        .editor::placeholder {
-            color: #ccc;
-        }
+        .editor::placeholder { color: #ccc; }
         
         .empty-state {
             display: flex;
@@ -540,17 +471,14 @@ const INDEX_HTML = `<!DOCTYPE html>
             height: 100%;
             color: #999;
         }
-        
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
+        .empty-state svg { width: 80px; height: 80px; margin-bottom: 20px; opacity: 0.5; }
+        .empty-state p { font-size: 16px; margin-bottom: 20px; }
+        .btn-create-first {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
         }
-        
-        .empty-state p {
-            font-size: 16px;
-        }
+        .btn-create-first:hover { background: #5a6fd6; }
         
         .toast {
             position: fixed;
@@ -566,35 +494,20 @@ const INDEX_HTML = `<!DOCTYPE html>
             opacity: 0;
             transition: opacity 0.3s;
         }
-        
-        .toast.show {
-            opacity: 1;
-        }
-        
-        .toast.success {
-            background: #27ae60;
-        }
-        
-        .toast.error {
-            background: #e74c3c;
-        }
+        .toast.show { opacity: 1; }
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
         
         .loading-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255,255,255,0.9);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 999;
         }
-        
-        .loading-overlay.show {
-            display: flex;
-        }
+        .loading-overlay.show { display: flex; }
         
         .spinner {
             border: 3px solid #f3f3f3;
@@ -604,44 +517,18 @@ const INDEX_HTML = `<!DOCTYPE html>
             height: 40px;
             animation: spin 1s linear infinite;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         @media (max-width: 768px) {
-            .sidebar {
-                width: 240px;
-            }
-            
-            .main-header input {
-                font-size: 20px;
-            }
+            .sidebar { width: 240px; }
+            .main-header input { font-size: 20px; }
         }
         
         @media (max-width: 600px) {
-            .app-container.active {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 40vh;
-            }
-            
-            .sidebar-content {
-                display: flex;
-                overflow-x: auto;
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .note-item {
-                min-width: 150px;
-                flex-shrink: 0;
-            }
+            .app-container.active { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; max-height: 35vh; }
+            .sidebar-content { display: flex; overflow-x: auto; gap: 10px; }
+            .note-item { min-width: 150px; flex-shrink: 0; }
         }
     </style>
 </head>
@@ -664,6 +551,7 @@ const INDEX_HTML = `<!DOCTYPE html>
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2>📝 笔记列表</h2>
+                <span id="noteCount" style="color: #999; font-size: 14px;"></span>
             </div>
             <div class="sidebar-content" id="notesList"></div>
             <div class="sidebar-footer">
@@ -678,16 +566,18 @@ const INDEX_HTML = `<!DOCTYPE html>
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="16" y1="13" x2="8" y2="13"></line>
                     <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
                 </svg>
-                <p>选择或创建一个笔记</p>
+                <p>还没有笔记</p>
+                <button class="btn btn-create-first" onclick="createNote()">创建第一条笔记</button>
             </div>
-            <div id="editorView" style="display: none; height: 100%; display: flex; flex-direction: column;">
+            <div id="editorView" style="display: none; height: 100%; flex-direction: column;">
                 <div class="main-header">
-                    <input type="text" id="noteTitle" placeholder="笔记标题" onchange="updateNoteTitle()">
+                    <input type="text" id="noteTitle" placeholder="输入标题...">
+                    <span class="unsaved-badge" id="unsavedBadge" style="display: none;">未保存</span>
+                    <button class="btn btn-save" id="saveBtn" onclick="saveNote()">保存</button>
                 </div>
                 <div class="editor-container">
-                    <textarea class="editor" id="noteContent" placeholder="开始输入笔记内容..." onchange="updateNoteContent()"></textarea>
+                    <textarea class="editor" id="noteContent" placeholder="开始输入笔记内容..."></textarea>
                 </div>
             </div>
         </div>
@@ -703,29 +593,23 @@ const INDEX_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const APP_JS = `let token = null;
+const APP_JS = \`let token = null;
 let notes = [];
 let currentNoteId = null;
-let saveTimeout = null;
+let hasUnsavedChanges = false;
 
 async function login() {
     const password = document.getElementById('password').value;
-    
-    if (!password) {
-        showToast('请输入密码', 'error');
-        return;
-    }
+    if (!password) { showToast('请输入密码', 'error'); return; }
     
     showLoading(true);
-    
     try {
-        const response = await fetch('/api/auth', {
+        const res = await fetch('/api/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password })
         });
-        
-        const data = await response.json();
+        const data = await res.json();
         
         if (data.success) {
             token = data.token;
@@ -735,241 +619,223 @@ async function login() {
             await loadNotes();
             showToast('登录成功', 'success');
         } else {
-            showToast(data.message || '登录失败', 'error');
+            showToast(data.message || '密码错误', 'error');
         }
-    } catch (error) {
-        showToast('网络错误，请重试', 'error');
-    } finally {
-        showLoading(false);
+    } catch (e) {
+        showToast('网络错误', 'error');
     }
+    showLoading(false);
 }
 
 async function loadNotes() {
     try {
-        const response = await fetch('/api/notes', {
-            method: 'GET',
+        const res = await fetch('/api/notes', {
             headers: { 'Authorization': token }
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            notes = data.notes || [];
-            renderNotesList();
-        } else {
-            showToast('加载笔记失败', 'error');
-        }
-    } catch (error) {
-        showToast('网络错误', 'error');
+        const data = await res.json();
+        notes = data.success ? (data.notes || []) : [];
+        renderNotesList();
+    } catch (e) {
+        showToast('加载失败', 'error');
     }
 }
 
 function renderNotesList() {
     const container = document.getElementById('notesList');
+    document.getElementById('noteCount').textContent = notes.length > 0 ? notes.length + ' 条' : '';
     
     if (notes.length === 0) {
-        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无笔记</div>';
+        container.innerHTML = '';
         return;
     }
     
     container.innerHTML = notes.map(note => \`
         <div class="note-item \${note.id === currentNoteId ? 'active' : ''}" onclick="selectNote('\${note.id}')">
-            <div class="note-title">\${escapeHtml(note.title)}</div>
+            <div class="note-title">\${escapeHtml(note.title) || '无标题'}</div>
             <div class="note-date">\${formatDate(note.updatedAt)}</div>
-            <button class="delete-btn" onclick="deleteNote('\${note.id}', event)">删除</button>
+            <button class="delete-btn" onclick="deleteNote(event, '\${note.id}')">删除</button>
         </div>
     \`).join('');
-}
-
-function selectNote(id) {
-    const note = notes.find(n => n.id === id);
-    if (!note) return;
-    
-    currentNoteId = id;
-    document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('editorView').style.display = 'flex';
-    document.getElementById('noteTitle').value = note.title;
-    document.getElementById('noteContent').value = note.content;
-    
-    renderNotesList();
 }
 
 async function createNote() {
     showLoading(true);
     
     try {
-        const response = await fetch('/api/notes', {
+        const res = await fetch('/api/notes', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({ title: '新笔记', content: '' })
+            headers: { 'Content-Type': 'application/json', 'Authorization': token },
+            body: JSON.stringify({ title: '', content: '' })
         });
-        
-        const data = await response.json();
+        const data = await res.json();
         
         if (data.success) {
             notes.unshift(data.note);
             renderNotesList();
             selectNote(data.note.id);
+            document.getElementById('noteTitle').focus();
             showToast('笔记已创建', 'success');
         } else {
             showToast(data.message || '创建失败', 'error');
-            console.error('Create note error:', data);
         }
-    } catch (error) {
-        showToast('网络错误: ' + error.message, 'error');
-        console.error('Network error:', error);
-    } finally {
-        showLoading(false);
+    } catch (e) {
+        showToast('网络错误', 'error');
     }
+    
+    showLoading(false);
 }
 
-async function updateNoteTitle() {
-    if (!currentNoteId) return;
+function selectNote(id) {
+    if (hasUnsavedChanges && !confirm('有未保存的更改，是否放弃？')) return;
     
-    const title = document.getElementById('noteTitle').value;
-    const note = notes.find(n => n.id === currentNoteId);
-    if (note && note.title === title) return;
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
     
-    await saveCurrentNote({ title });
+    currentNoteId = id;
+    hasUnsavedChanges = false;
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('editorView').style.display = 'flex';
+    document.getElementById('noteTitle').value = note.title || '';
+    document.getElementById('noteContent').value = note.content || '';
+    updateUnsavedStatus();
+    renderNotesList();
 }
 
-async function updateNoteContent() {
+async function saveNote() {
     if (!currentNoteId) return;
     
+    const title = document.getElementById('noteTitle').value.trim();
     const content = document.getElementById('noteContent').value;
-    const note = notes.find(n => n.id === currentNoteId);
-    if (note && note.content === content) return;
     
-    await saveCurrentNote({ content });
-}
-
-async function saveCurrentNote(updates) {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    
-    saveTimeout = setTimeout(async () => {
-        const note = notes.find(n => n.id === currentNoteId);
-        if (!note) return;
-        
-        try {
-            const response = await fetch('/api/notes', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: JSON.stringify({
-                    id: currentNoteId,
-                    title: updates.title !== undefined ? updates.title : note.title,
-                    content: updates.content !== undefined ? updates.content : note.content
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                const index = notes.findIndex(n => n.id === currentNoteId);
-                notes[index] = data.note;
-                renderNotesList();
-            }
-        } catch (error) {
-            showToast('保存失败', 'error');
-        }
-    }, 500);
-}
-
-async function deleteNote(id, event) {
-    event.stopPropagation();
-    
-    if (!confirm('确定要删除这条笔记吗？')) return;
-    
-    showLoading(true);
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
     
     try {
-        const response = await fetch(\`/api/notes?id=\${id}\`, {
+        const res = await fetch('/api/notes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': token },
+            body: JSON.stringify({ id: currentNoteId, title, content })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            const idx = notes.findIndex(n => n.id === currentNoteId);
+            if (idx !== -1) {
+                notes[idx] = data.note;
+                renderNotesList();
+            }
+            hasUnsavedChanges = false;
+            updateUnsavedStatus();
+            showToast('保存成功', 'success');
+        } else {
+            showToast('保存失败', 'error');
+        }
+    } catch (e) {
+        showToast('网络错误', 'error');
+    }
+    
+    saveBtn.disabled = false;
+    saveBtn.textContent = '保存';
+}
+
+async function deleteNote(event, id) {
+    event.stopPropagation();
+    if (!confirm('确定删除这条笔记吗？')) return;
+    
+    showLoading(true);
+    try {
+        const res = await fetch('/api/notes?id=' + id, {
             method: 'DELETE',
             headers: { 'Authorization': token }
         });
-        
-        const data = await response.json();
+        const data = await res.json();
         
         if (data.success) {
             notes = notes.filter(n => n.id !== id);
-            
             if (currentNoteId === id) {
                 currentNoteId = null;
+                hasUnsavedChanges = false;
                 document.getElementById('emptyState').style.display = 'flex';
                 document.getElementById('editorView').style.display = 'none';
             }
-            
             renderNotesList();
-            showToast('笔记已删除', 'success');
+            showToast('已删除', 'success');
         } else {
             showToast('删除失败', 'error');
         }
-    } catch (error) {
+    } catch (e) {
         showToast('网络错误', 'error');
-    } finally {
-        showLoading(false);
     }
+    showLoading(false);
+}
+
+function markUnsaved() {
+    hasUnsavedChanges = true;
+    updateUnsavedStatus();
+}
+
+function updateUnsavedStatus() {
+    const badge = document.getElementById('unsavedBadge');
+    badge.style.display = hasUnsavedChanges ? 'inline' : 'none';
 }
 
 function logout() {
+    if (hasUnsavedChanges && !confirm('有未保存的更改，是否退出？')) return;
+    
     token = null;
     notes = [];
     currentNoteId = null;
-    
+    hasUnsavedChanges = false;
     document.body.classList.add('login-page');
     document.getElementById('loginContainer').style.display = 'block';
     document.getElementById('appContainer').classList.remove('active');
     document.getElementById('password').value = '';
     document.getElementById('emptyState').style.display = 'flex';
     document.getElementById('editorView').style.display = 'none';
-    
-    showToast('已退出登录', 'success');
+    showToast('已退出', 'success');
 }
 
 function showLoading(show) {
     document.getElementById('loading').classList.toggle('show', show);
 }
 
-function showToast(message, type = 'success') {
+function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
-    toast.textContent = message;
+    toast.textContent = msg;
     toast.className = 'toast ' + type + ' show';
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
+function formatDate(str) {
+    const d = new Date(str);
     const now = new Date();
-    const diff = now - date;
+    const diff = now - d;
     
     if (diff < 60000) return '刚刚';
     if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
     if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
     if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
-    
-    return date.toLocaleDateString('zh-CN');
+    return d.toLocaleDateString('zh-CN');
 }
 
 function escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = text || '';
     return div.innerHTML;
 }
 
-document.getElementById('password').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        login();
-    }
+document.getElementById('password').addEventListener('keypress', e => {
+    if (e.key === 'Enter') login();
 });
 
-document.getElementById('noteContent').addEventListener('input', function() {
-    updateNoteContent();
-});`;
+document.getElementById('noteTitle').addEventListener('input', markUnsaved);
+document.getElementById('noteContent').addEventListener('input', markUnsaved);
+
+window.addEventListener('beforeunload', e => {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+\`;

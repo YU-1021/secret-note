@@ -175,40 +175,24 @@ npm run deploy
 ## 文件说明
 
 - `worker.js` - Cloudflare Worker 主文件，包含 API 和前端代码
-- `wrangler.toml` - 配置文件（**必须填写 KV namespace ID**）
+- `wrangler.toml` - 基础配置文件（无需填写 KV ID，在 Dashboard 中绑定）
 - `package.json` - 项目依赖配置
 
 ## 配置说明
 
-### ⚠️ 重要：KV Namespace ID 配置
+### wrangler.toml
 
-**必须在 wrangler.toml 中填写真实的 KV namespace ID**，否则每次部署都会重置绑定！
+基础配置文件，只包含项目名称和兼容性日期。**KV namespace 和密码都在 Cloudflare Dashboard 中绑定**，无需修改此文件。
 
-#### 获取 KV Namespace ID
+### KV 绑定位置
 
-1. 访问 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. 进入 Workers & Pages → KV
-3. 点击你创建的 namespace
-4. 复制 **Namespace ID**（如：`284b840f70de434fae9732f74ee2290e`）
+- **Pages 项目**：Settings → Functions → KV namespace bindings
+- **Workers 项目**：Settings → Variables → KV Namespace Bindings
 
-#### 配置 wrangler.toml
+### 密码设置位置
 
-将复制的 ID 填入 [wrangler.toml](file:///d:/project/secret%20note/wrangler.toml) 第 16 行：
-
-```toml
-[[kv_namespaces]]
-binding = "NOTES"
-id = "你的真实KV_NAMESPACE_ID"  # 替换 YOUR_KV_NAMESPACE_ID_HERE
-```
-
-### 密码设置
-
-**推荐方式**：在 Cloudflare Dashboard 设置，不会被部署覆盖
-
-- **Pages 项目**：Settings → Environment variables → Add variable
-- **Workers 项目**：Settings → Variables and Secrets → Add variable
-- Name: `PASSWORD`
-- Value: 你的密码
+- **Pages 项目**：Settings → Environment variables
+- **Workers 项目**：Settings → Variables and Secrets
 
 ## 安全建议
 
@@ -225,23 +209,16 @@ id = "你的真实KV_NAMESPACE_ID"  # 替换 YOUR_KV_NAMESPACE_ID_HERE
 
 ## 故障排除
 
-### 每次部署后绑定丢失
-
-**原因**：wrangler.toml 中没有配置 KV namespace ID
-
-**解决方案**：
-1. 在 Cloudflare Dashboard 获取 KV namespace ID
-2. 将 ID 填入 wrangler.toml 的 `[[kv_namespaces]]` 部分
-3. 推送代码重新部署
-
 ### KV 命名空间未绑定
 
 **症状**：无法保存笔记，或提示 KV 错误
 
 **解决方案**：
-1. 确保 wrangler.toml 中的 KV namespace ID 是真实的（不是 `YOUR_KV_NAMESPACE_ID_HERE`）
-2. 确保 `binding = "NOTES"` 没有拼写错误
-3. 重新部署项目
+1. 确保 KV namespace 已创建：Workers & Pages → KV
+2. 确保已绑定到项目：
+   - **Pages**：Settings → Functions → KV namespace bindings
+   - **Workers**：Settings → Variables → KV Namespace Bindings
+3. Variable name 必须是 `NOTES`
 
 ### 密码验证失败
 
