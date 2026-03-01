@@ -593,7 +593,7 @@ const INDEX_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const APP_JS = \`let token = null;
+const APP_JS = `let token = null;
 let notes = [];
 let currentNoteId = null;
 let hasUnsavedChanges = false;
@@ -649,13 +649,13 @@ function renderNotesList() {
         return;
     }
     
-    container.innerHTML = notes.map(note => \`
-        <div class="note-item \${note.id === currentNoteId ? 'active' : ''}" onclick="selectNote('\${note.id}')">
-            <div class="note-title">\${escapeHtml(note.title) || '无标题'}</div>
-            <div class="note-date">\${formatDate(note.updatedAt)}</div>
-            <button class="delete-btn" onclick="deleteNote(event, '\${note.id}')">删除</button>
-        </div>
-    \`).join('');
+    container.innerHTML = notes.map(note => 
+        '<div class="note-item ' + (note.id === currentNoteId ? 'active' : '') + '" onclick="selectNote(\\'' + note.id + '\\')">' +
+            '<div class="note-title">' + escapeHtml(note.title || '无标题') + '</div>' +
+            '<div class="note-date">' + formatDate(note.updatedAt) + '</div>' +
+            '<button class="delete-btn" onclick="deleteNote(event, \\'' + note.id + '\\')">删除</button>' +
+        '</div>'
+    ).join('');
 }
 
 async function createNote() {
@@ -800,11 +800,12 @@ function showLoading(show) {
     document.getElementById('loading').classList.toggle('show', show);
 }
 
-function showToast(msg, type = 'success') {
+function showToast(msg, type) {
+    type = type || 'success';
     const toast = document.getElementById('toast');
     toast.textContent = msg;
     toast.className = 'toast ' + type + ' show';
-    setTimeout(() => toast.classList.remove('show'), 2500);
+    setTimeout(function() { toast.classList.remove('show'); }, 2500);
 }
 
 function formatDate(str) {
@@ -825,17 +826,16 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-document.getElementById('password').addEventListener('keypress', e => {
+document.getElementById('password').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') login();
 });
 
 document.getElementById('noteTitle').addEventListener('input', markUnsaved);
 document.getElementById('noteContent').addEventListener('input', markUnsaved);
 
-window.addEventListener('beforeunload', e => {
+window.addEventListener('beforeunload', function(e) {
     if (hasUnsavedChanges) {
         e.preventDefault();
         e.returnValue = '';
     }
-});
-\`;
+});`;
