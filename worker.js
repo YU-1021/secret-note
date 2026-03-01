@@ -113,9 +113,28 @@ async function handleNotes(request, env, path) {
     }
 
     if (request.method === 'POST') {
-      const { title, content } = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch (e) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'Invalid JSON body' 
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      const { title, content } = body;
       const notesJson = await env.NOTES.get('notes');
-      const notes = notesJson ? JSON.parse(notesJson) : [];
+      let notes = [];
+      
+      try {
+        notes = notesJson ? JSON.parse(notesJson) : [];
+      } catch (e) {
+        notes = [];
+      }
       
       const newNote = {
         id: generateId(),
@@ -126,7 +145,18 @@ async function handleNotes(request, env, path) {
       };
       
       notes.unshift(newNote);
-      await env.NOTES.put('notes', JSON.stringify(notes));
+      
+      try {
+        await env.NOTES.put('notes', JSON.stringify(notes));
+      } catch (e) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'Failed to save to KV: ' + e.message 
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       
       return new Response(JSON.stringify({ success: true, note: newNote }), {
         headers: { 'Content-Type': 'application/json' }
@@ -785,10 +815,12 @@ async function createNote() {
             selectNote(data.note.id);
             showToast('笔记已创建', 'success');
         } else {
-            showToast('创建失败', 'error');
+            showToast(data.message || '创建失败', 'error');
+            console.error('Create note error:', data);
         }
     } catch (error) {
-        showToast('网络错误', 'error');
+        showToast('网络错误: ' + error.message, 'error');
+        console.error('Network error:', error);
     } finally {
         showLoading(false);
     }
