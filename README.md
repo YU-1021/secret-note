@@ -14,43 +14,45 @@
 
 **适用场景**：通过 Cloudflare Pages 连接 GitHub 仓库自动部署
 
-#### 1. 创建 KV 命名空间
+**优点**：无需手动填写 KV ID，所有配置在 Dashboard 界面完成
 
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. 进入 "Workers & Pages" -> "KV"
-3. 点击 "Create a Namespace"
-4. 命名为 `secret-notes`
-5. 点击创建后，点击该 namespace 查看 **ID**（一串字符，如 `abc123def456...`）
-6. **复制这个 ID**
-
-#### 2. 配置 wrangler.toml
-
-打开 [wrangler.toml](file:///d:/project/secret%20note/wrangler.toml) 文件，将第 24 行的 `YOUR_KV_NAMESPACE_ID_HERE` 替换为你复制的 KV namespace ID：
-
-```toml
-[[kv_namespaces]]
-binding = "NOTES"
-id = "你的KV_NAMESPACE_ID"  # 粘贴到这里
-```
-
-#### 3. 推送到 GitHub
+#### 1. 推送代码到 GitHub
 
 将项目推送到你的 GitHub 仓库。
 
-#### 4. 连接 Cloudflare Pages
+#### 2. 连接 Cloudflare Pages
 
-1. 进入 "Workers & Pages" -> "Overview"
-2. 点击 "Create application" -> "Pages" -> "Connect to Git"
-3. 选择你的 GitHub 仓库
-4. 配置构建设置：
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. 进入 "Workers & Pages" -> "Overview"
+3. 点击 "Create application" -> "Pages" -> "Connect to Git"
+4. 选择你的 GitHub 仓库
+5. 配置构建设置：
    - **Framework preset**: None
    - **Build command**: 留空
    - **Build output directory**: `/`
-5. 点击 "Save and Deploy"
+6. 点击 "Save and Deploy"
 
-#### 5. 设置环境变量
+#### 3. 创建 KV 命名空间
 
-1. 在 Pages 项目页面点击 "Settings" -> "Environment variables"
+1. 进入 "Workers & Pages" -> "KV"
+2. 点击 "Create a Namespace"
+3. 命名为 `secret-notes`
+4. 点击 "Add"
+
+#### 4. 绑定 KV 到项目
+
+1. 回到你的 Pages 项目
+2. 点击 "Settings" -> "Functions"
+3. 找到 "KV namespace bindings" 部分
+4. 点击 "Add binding"
+5. 填写：
+   - **Variable name**: `NOTES`
+   - **KV namespace**: 选择你创建的 `secret-notes`
+6. 点击 "Save"
+
+#### 5. 设置密码
+
+1. 在 Settings 页面点击 "Environment variables"
 2. 点击 "Add variable"
 3. 填写：
    - **Variable name**: `PASSWORD`
@@ -60,9 +62,8 @@ id = "你的KV_NAMESPACE_ID"  # 粘贴到这里
 
 #### 6. 重新部署
 
-1. 回到项目页面
-2. 点击 "Deployments" 标签
-3. 点击 "Retry deployment" 或推送新的 commit 触发重新部署
+1. 点击 "Deployments" 标签
+2. 点击 "Retry deployment"
 
 #### 7. 完成
 
@@ -70,9 +71,9 @@ id = "你的KV_NAMESPACE_ID"  # 粘贴到这里
 
 ---
 
-### 方式二：通过 Cloudflare Dashboard 直接部署
+### 方式二：Dashboard 直接部署
 
-**注意**：Dashboard 部署不需要修改任何配置文件，所有配置都在 Dashboard 界面中完成。
+**优点**：无需 GitHub，直接在 Dashboard 中操作
 
 #### 1. 创建 KV 命名空间
 
@@ -174,20 +175,24 @@ npm run deploy
 ## 文件说明
 
 - `worker.js` - Cloudflare Worker 主文件，包含 API 和前端代码
-- `wrangler.toml` - 主配置文件（GitHub 同步部署和 CLI 部署都需要填写 KV namespace ID）
+- `wrangler.toml` - 基础配置文件（无需填写 KV ID，在 Dashboard 中绑定）
 - `package.json` - 项目依赖配置
 
-## 配置文件说明
+## 配置说明
 
 ### wrangler.toml
 
-这是主配置文件，用于 GitHub 同步部署和 CLI 部署：
+基础配置文件，只包含项目名称和兼容性日期。**KV namespace 和密码都在 Cloudflare Dashboard 中绑定**，无需修改此文件。
 
-- **GitHub 同步部署**：必须填写真实的 KV namespace ID
-- **CLI 部署**：必须填写真实的 KV namespace ID
-- **Dashboard 直接部署**：不需要此配置文件
+### KV 绑定位置
 
-**重要**：KV namespace ID 必须是真实的 ID，不能是占位符！
+- **Pages 项目**：Settings → Functions → KV namespace bindings
+- **Workers 项目**：Settings → Variables → KV Namespace Bindings
+
+### 密码设置位置
+
+- **Pages 项目**：Settings → Environment variables
+- **Workers 项目**：Settings → Variables and Secrets
 
 ## 安全建议
 
@@ -204,26 +209,16 @@ npm run deploy
 
 ## 故障排除
 
-### GitHub 同步部署失败：KV namespace ID 错误
-
-**错误信息**：`"kv_namespaces[0]" bindings should have a string "id" field`
-
-**解决方案**：
-1. 确保 [wrangler.toml](file:///d:/project/secret%20note/wrangler.toml) 中的 `id` 字段填写了真实的 KV namespace ID
-2. 不能使用占位符 `YOUR_KV_NAMESPACE_ID_HERE`
-3. 在 Cloudflare Dashboard -> KV -> 点击你的 namespace -> 复制 ID
-4. 将 ID 粘贴到 wrangler.toml 的 `id` 字段
-5. 推送更改到 GitHub，触发重新部署
-
 ### KV 命名空间未绑定
 
-**Dashboard 部署方式**：
-- 确保在 Settings -> Variables -> KV Namespace Bindings 中正确绑定了 KV 命名空间
-- Variable name 必须是 `NOTES`
+**症状**：无法保存笔记，或提示 KV 错误
 
-**GitHub 同步 / CLI 部署方式**：
-- 确保 `wrangler.toml` 中的 KV 命名空间 ID 是真实有效的 ID
-- ID 应该是一串字符，如 `abc123def456...`
+**解决方案**：
+1. 确保 KV namespace 已创建：Workers & Pages → KV
+2. 确保已绑定到项目：
+   - **Pages**：Settings → Functions → KV namespace bindings
+   - **Workers**：Settings → Variables → KV Namespace Bindings
+3. Variable name 必须是 `NOTES`
 
 ### 密码验证失败
 

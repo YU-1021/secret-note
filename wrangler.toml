@@ -2,27 +2,19 @@ name = "secret-note"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
-# ===== 重要说明 =====
-# GitHub 同步部署需要填写真实的 KV namespace ID
+# ===== Dashboard 绑定说明 =====
+# KV namespace 和密码都在 Cloudflare Dashboard 中绑定，无需修改此文件
 # 
-# 步骤：
-# 1. 在 Cloudflare Dashboard 创建 KV namespace
-#    Workers & Pages -> KV -> Create a Namespace
+# 绑定 KV namespace：
+# 1. Workers & Pages -> 你的项目 -> Settings -> Functions
+# 2. 找到 "KV namespace bindings" 部分
+# 3. 点击 "Add binding"
+# 4. Variable name: NOTES
+# 5. KV namespace: 选择你创建的 KV namespace
 # 
-# 2. 获取 KV namespace ID
-#    在 KV 页面点击你创建的 namespace，复制 ID
-# 
-# 3. 将 ID 填入下方的 id 字段
-# 
-# 4. 在 Cloudflare Pages 设置中绑定环境变量 PASSWORD
-#    Settings -> Environment variables -> Add variable
-#    Name: PASSWORD, Value: 你的密码
+# 设置密码：
+# 1. Settings -> Environment variables
+# 2. Add variable -> Name: PASSWORD, Value: 你的密码
 
-[vars]
-# 密码在 Cloudflare Pages 设置中配置（推荐）
-# 或取消下方注释直接设置（不推荐，会暴露在代码中）
-# PASSWORD = "your-secure-password-here"
-
-[[kv_namespaces]]
-binding = "NOTES"
-id = "YOUR_KV_NAMESPACE_ID_HERE"  # 替换为你的 KV namespace ID
+# 注意：不要在此文件中添加 [[kv_namespaces]] 配置
+# KV 绑定完全在 Dashboard 界面中完成
