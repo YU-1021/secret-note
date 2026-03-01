@@ -8,8 +8,8 @@ export default {
         return await handleAuth(request, env);
       }
 
-      if (path === '/api/notes') {
-        return await handleNotes(request, env);
+      if (path.startsWith('/api/notes')) {
+        return await handleNotes(request, env, path);
       }
 
       if (path === '/' || path === '/index.html') {
@@ -73,7 +73,7 @@ async function handleAuth(request, env) {
   }
 }
 
-async function handleNotes(request, env) {
+async function handleNotes(request, env, path) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !verifyToken(authHeader)) {
     return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), {
@@ -93,16 +93,93 @@ async function handleNotes(request, env) {
   }
 
   try {
+    const url = new URL(request.url);
+    const noteId = url.searchParams.get('id');
+
     if (request.method === 'GET') {
-      const notes = await env.NOTES.get('notes');
-      return new Response(JSON.stringify({ success: true, notes: notes || '' }), {
+      const notesJson = await env.NOTES.get('notes');
+      const notes = notesJson ? JSON.parse(notesJson) : [];
+      
+      if (noteId) {
+        const note = notes.find(n => n.id === noteId);
+        return new Response(JSON.stringify({ success: true, note }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      return new Response(JSON.stringify({ success: true, notes }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
     if (request.method === 'POST') {
-      const { notes } = await request.json();
-      await env.NOTES.put('notes', notes || '');
+      const { title, content } = await request.json();
+      const notesJson = await env.NOTES.get('notes');
+      const notes = notesJson ? JSON.parse(notesJson) : [];
+      
+      const newNote = {
+        id: generateId(),
+        title: title || '无标题',
+        content: content || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      notes.unshift(newNote);
+      await env.NOTES.put('notes', JSON.stringify(notes));
+      
+      return new Response(JSON.stringify({ success: true, note: newNote }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (request.method === 'PUT') {
+      const { id, title, content } = await request.json();
+      const notesJson = await env.NOTES.get('notes');
+      const notes = notesJson ? JSON.parse(notesJson) : [];
+      
+      const index = notes.findIndex(n => n.id === id);
+      if (index === -1) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'Note not found' 
+        }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      notes[index] = {
+        ...notes[index],
+        title: title || notes[index].title,
+        content: content !== undefined ? content : notes[index].content,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await env.NOTES.put('notes', JSON.stringify(notes));
+      
+      return new Response(JSON.stringify({ success: true, note: notes[index] }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (request.method === 'DELETE') {
+      if (!noteId) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'Note ID required' 
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      const notesJson = await env.NOTES.get('notes');
+      const notes = notesJson ? JSON.parse(notesJson) : [];
+      
+      const filteredNotes = notes.filter(n => n.id !== noteId);
+      await env.NOTES.put('notes', JSON.stringify(filteredNotes));
+      
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -112,7 +189,7 @@ async function handleNotes(request, env) {
   } catch (error) {
     return new Response(JSON.stringify({ 
       success: false, 
-      message: 'Failed to access storage' 
+      message: 'Failed to access storage: ' + error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -142,6 +219,12 @@ function generateToken() {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function generateId() {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function verifyToken(token) {
   return token && token.length === 64;
 }
@@ -158,143 +241,331 @@ const INDEX_HTML = `<!DOCTYPE html>
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
+        }
+        
+        body.login-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
-        .container {
+        
+        .login-container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 800px;
+            max-width: 400px;
             overflow: hidden;
         }
-        .header {
+        
+        .login-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
             text-align: center;
         }
-        .header h1 {
+        
+        .login-header h1 {
             font-size: 28px;
             margin-bottom: 10px;
         }
-        .header p {
+        
+        .login-header p {
             opacity: 0.9;
             font-size: 14px;
         }
-        .content {
+        
+        .login-content {
             padding: 30px;
         }
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        
         .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            margin-bottom: 20px;
         }
+        
         .form-group label {
+            display: block;
             font-weight: 600;
             color: #333;
             font-size: 14px;
+            margin-bottom: 8px;
         }
+        
         .form-group input {
+            width: 100%;
             padding: 12px 16px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
+        
         .form-group input:focus {
             outline: none;
             border-color: #667eea;
         }
+        
         .btn {
-            padding: 14px 24px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+        
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            width: 100%;
+            justify-content: center;
         }
-        .btn-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .app-container {
+            display: none;
+            height: 100vh;
+        }
+        
+        .app-container.active {
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .note-item {
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+            position: relative;
+        }
+        
+        .note-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .note-item.active {
+            background: #667eea;
             color: white;
         }
-        .notes-container {
-            display: none;
+        
+        .note-item .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .notes-container.active {
-            display: block;
+        
+        .note-item .note-date {
+            font-size: 12px;
+            opacity: 0.7;
         }
-        .notes-textarea {
+        
+        .note-item .delete-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .note-item:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        .note-item.active .delete-btn {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .btn-new {
+            background: #667eea;
+            color: white;
             width: 100%;
-            min-height: 400px;
-            padding: 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 16px;
-            line-height: 1.6;
-            resize: vertical;
-            font-family: 'Courier New', monospace;
+            justify-content: center;
         }
-        .notes-textarea:focus {
-            outline: none;
-            border-color: #667eea;
+        
+        .btn-logout {
+            background: transparent;
+            color: #666;
+            width: 100%;
+            justify-content: center;
+            margin-top: 10px;
         }
-        .toolbar {
+        
+        .btn-logout:hover {
+            background: #f5f5f5;
+        }
+        
+        .main-content {
+            flex: 1;
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            flex-direction: column;
+            background: #fff;
         }
-        .error-message {
-            color: #e74c3c;
-            padding: 12px;
-            background: #fee;
+        
+        .main-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .main-header input {
+            font-size: 24px;
+            font-weight: 600;
+            border: none;
+            outline: none;
+            flex: 1;
+            padding: 5px 0;
+        }
+        
+        .main-header input::placeholder {
+            color: #ccc;
+        }
+        
+        .editor-container {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.8;
+            resize: none;
+            font-family: inherit;
+        }
+        
+        .editor::placeholder {
+            color: #ccc;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #999;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background: #27ae60;
+        }
+        
+        .toast.error {
+            background: #e74c3c;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
             display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
         }
-        .error-message.show {
-            display: block;
+        
+        .loading-overlay.show {
+            display: flex;
         }
-        .success-message {
-            color: #27ae60;
-            padding: 12px;
-            background: #efe;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .success-message.show {
-            display: block;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        .loading.show {
-            display: block;
-        }
+        
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #667eea;
@@ -302,64 +573,120 @@ const INDEX_HTML = `<!DOCTYPE html>
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-header input {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .app-container.active {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+            }
+            
+            .sidebar-content {
+                display: flex;
+                overflow-x: auto;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .note-item {
+                min-width: 150px;
+                flex-shrink: 0;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="login-page">
+    <div class="login-container" id="loginContainer">
+        <div class="login-header">
             <h1>🔐 加密笔记</h1>
             <p>安全存储您的私密笔记</p>
         </div>
-        <div class="content">
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
-            
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px;">加载中...</p>
+        <div class="login-content">
+            <div class="form-group">
+                <label for="password">访问密码</label>
+                <input type="password" id="password" placeholder="请输入访问密码" autocomplete="current-password">
             </div>
-            
-            <div class="login-form" id="loginForm">
-                <div class="form-group">
-                    <label for="password">访问密码</label>
-                    <input type="password" id="password" placeholder="请输入访问密码" autocomplete="current-password">
-                </div>
-                <button class="btn btn-primary" onclick="login()">登录</button>
+            <button class="btn btn-primary" onclick="login()">登录</button>
+        </div>
+    </div>
+    
+    <div class="app-container" id="appContainer">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📝 笔记列表</h2>
             </div>
-            
-            <div class="notes-container" id="notesContainer">
-                <div class="toolbar">
-                    <button class="btn btn-success" onclick="saveNotes()">保存笔记</button>
-                    <button class="btn" onclick="loadNotes()">刷新</button>
-                    <button class="btn" onclick="logout()">退出登录</button>
+            <div class="sidebar-content" id="notesList"></div>
+            <div class="sidebar-footer">
+                <button class="btn btn-new" onclick="createNote()">+ 新建笔记</button>
+                <button class="btn btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="main-content" id="mainContent">
+            <div class="empty-state" id="emptyState">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <p>选择或创建一个笔记</p>
+            </div>
+            <div id="editorView" style="display: none; height: 100%; display: flex; flex-direction: column;">
+                <div class="main-header">
+                    <input type="text" id="noteTitle" placeholder="笔记标题" onchange="updateNoteTitle()">
                 </div>
-                <textarea class="notes-textarea" id="notes" placeholder="在这里输入您的笔记内容..."></textarea>
+                <div class="editor-container">
+                    <textarea class="editor" id="noteContent" placeholder="开始输入笔记内容..." onchange="updateNoteContent()"></textarea>
+                </div>
             </div>
         </div>
     </div>
+    
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
     <script src="/app.js"></script>
 </body>
 </html>`;
 
 const APP_JS = `let token = null;
+let notes = [];
+let currentNoteId = null;
+let saveTimeout = null;
 
 async function login() {
     const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('errorMessage');
-    const loading = document.getElementById('loading');
     
     if (!password) {
-        showError('请输入密码');
+        showToast('请输入密码', 'error');
         return;
     }
     
-    loading.classList.add('show');
+    showLoading(true);
     
     try {
         const response = await fetch('/api/auth', {
@@ -372,55 +699,22 @@ async function login() {
         
         if (data.success) {
             token = data.token;
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('notesContainer').classList.add('active');
+            document.body.classList.remove('login-page');
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
             await loadNotes();
-            showSuccess('登录成功');
+            showToast('登录成功', 'success');
         } else {
-            showError(data.message || '登录失败');
+            showToast(data.message || '登录失败', 'error');
         }
     } catch (error) {
-        showError('网络错误，请重试');
+        showToast('网络错误，请重试', 'error');
     } finally {
-        loading.classList.remove('show');
-    }
-}
-
-async function saveNotes() {
-    const notes = document.getElementById('notes').value;
-    const loading = document.getElementById('loading');
-    
-    loading.classList.add('show');
-    
-    try {
-        const response = await fetch('/api/notes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({ notes })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showSuccess('保存成功');
-        } else {
-            showError('保存失败');
-        }
-    } catch (error) {
-        showError('网络错误，请重试');
-    } finally {
-        loading.classList.remove('show');
+        showLoading(false);
     }
 }
 
 async function loadNotes() {
-    const loading = document.getElementById('loading');
-    
-    loading.classList.add('show');
-    
     try {
         const response = await fetch('/api/notes', {
             method: 'GET',
@@ -430,45 +724,220 @@ async function loadNotes() {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('notes').value = data.notes || '';
+            notes = data.notes || [];
+            renderNotesList();
         } else {
-            showError('加载失败');
+            showToast('加载笔记失败', 'error');
         }
     } catch (error) {
-        showError('网络错误，请重试');
+        showToast('网络错误', 'error');
+    }
+}
+
+function renderNotesList() {
+    const container = document.getElementById('notesList');
+    
+    if (notes.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无笔记</div>';
+        return;
+    }
+    
+    container.innerHTML = notes.map(note => \`
+        <div class="note-item \${note.id === currentNoteId ? 'active' : ''}" onclick="selectNote('\${note.id}')">
+            <div class="note-title">\${escapeHtml(note.title)}</div>
+            <div class="note-date">\${formatDate(note.updatedAt)}</div>
+            <button class="delete-btn" onclick="deleteNote('\${note.id}', event)">删除</button>
+        </div>
+    \`).join('');
+}
+
+function selectNote(id) {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    
+    currentNoteId = id;
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('editorView').style.display = 'flex';
+    document.getElementById('noteTitle').value = note.title;
+    document.getElementById('noteContent').value = note.content;
+    
+    renderNotesList();
+}
+
+async function createNote() {
+    showLoading(true);
+    
+    try {
+        const response = await fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            },
+            body: JSON.stringify({ title: '新笔记', content: '' })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            notes.unshift(data.note);
+            renderNotesList();
+            selectNote(data.note.id);
+            showToast('笔记已创建', 'success');
+        } else {
+            showToast('创建失败', 'error');
+        }
+    } catch (error) {
+        showToast('网络错误', 'error');
     } finally {
-        loading.classList.remove('show');
+        showLoading(false);
+    }
+}
+
+async function updateNoteTitle() {
+    if (!currentNoteId) return;
+    
+    const title = document.getElementById('noteTitle').value;
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note && note.title === title) return;
+    
+    await saveCurrentNote({ title });
+}
+
+async function updateNoteContent() {
+    if (!currentNoteId) return;
+    
+    const content = document.getElementById('noteContent').value;
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note && note.content === content) return;
+    
+    await saveCurrentNote({ content });
+}
+
+async function saveCurrentNote(updates) {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    
+    saveTimeout = setTimeout(async () => {
+        const note = notes.find(n => n.id === currentNoteId);
+        if (!note) return;
+        
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify({
+                    id: currentNoteId,
+                    title: updates.title !== undefined ? updates.title : note.title,
+                    content: updates.content !== undefined ? updates.content : note.content
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const index = notes.findIndex(n => n.id === currentNoteId);
+                notes[index] = data.note;
+                renderNotesList();
+            }
+        } catch (error) {
+            showToast('保存失败', 'error');
+        }
+    }, 500);
+}
+
+async function deleteNote(id, event) {
+    event.stopPropagation();
+    
+    if (!confirm('确定要删除这条笔记吗？')) return;
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(\`/api/notes?id=\${id}\`, {
+            method: 'DELETE',
+            headers: { 'Authorization': token }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            notes = notes.filter(n => n.id !== id);
+            
+            if (currentNoteId === id) {
+                currentNoteId = null;
+                document.getElementById('emptyState').style.display = 'flex';
+                document.getElementById('editorView').style.display = 'none';
+            }
+            
+            renderNotesList();
+            showToast('笔记已删除', 'success');
+        } else {
+            showToast('删除失败', 'error');
+        }
+    } catch (error) {
+        showToast('网络错误', 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
 function logout() {
     token = null;
-    document.getElementById('loginForm').style.display = 'flex';
-    document.getElementById('notesContainer').classList.remove('active');
+    notes = [];
+    currentNoteId = null;
+    
+    document.body.classList.add('login-page');
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('appContainer').classList.remove('active');
     document.getElementById('password').value = '';
-    showSuccess('已退出登录');
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('editorView').style.display = 'none';
+    
+    showToast('已退出登录', 'success');
 }
 
-function showError(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    errorMessage.textContent = message;
-    errorMessage.classList.add('show');
-    successMessage.classList.remove('show');
-    setTimeout(() => errorMessage.classList.remove('show'), 3000);
+function showLoading(show) {
+    document.getElementById('loading').classList.toggle('show', show);
 }
 
-function showSuccess(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    successMessage.textContent = message;
-    successMessage.classList.add('show');
-    errorMessage.classList.remove('show');
-    setTimeout(() => successMessage.classList.remove('show'), 3000);
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type + ' show';
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+    
+    return date.toLocaleDateString('zh-CN');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 document.getElementById('password').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         login();
     }
+});
+
+document.getElementById('noteContent').addEventListener('input', function() {
+    updateNoteContent();
 });`;
